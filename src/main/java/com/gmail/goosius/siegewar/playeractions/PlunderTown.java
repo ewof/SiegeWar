@@ -13,6 +13,7 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler;
 import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.event.DeleteTownEvent.Cause;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.EconomyAccount;
 import com.palmergames.bukkit.towny.object.Nation;
@@ -65,6 +66,9 @@ public class PlunderTown {
 
 		if(siege.isTownPlundered())
 			throw new TownyException(translator.of("msg_err_siege_war_town_already_plundered", townToBePlundered.getName()));
+
+		if (SiegeWarSettings.isOnlyOneActionEnabled() && siege.isTownInvaded())
+			throw new TownyException(translator.of("msg_err_town_already_invaded_only_one_action"));
 
 		// If the rebels won, plunder is not possible
 		if(siege.isRevoltSiege() && siege.getStatus().defendersWon())
@@ -155,7 +159,7 @@ public class PlunderTown {
 
 		//Save data
 		if(townDestroyed) {
-			TownyUniverse.getInstance().getDataSource().removeTown(town);
+			TownyUniverse.getInstance().getDataSource().removeTown(town, Cause.BANKRUPTCY);
 		} else {
 			SiegeController.saveSiege(siege);
 		}

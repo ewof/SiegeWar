@@ -85,6 +85,12 @@ public class SiegeWarTownPeacefulnessUtil {
 		}
 		TownMetaDataController.setPeacefulnessChangeCountdownDays(town, 0);
 		
+		// The Town would become a peaceful capital city, which is not allowed.
+		if (!SiegeWarSettings.capitalsAllowedTownPeacefulness() && town.isCapital() && !TownMetaDataController.getPeacefulness(town)) {
+			TownyMessaging.sendPrefixedTownMessage(town, Translatable.of("msg_err_your_town_cannot_be_peaceful_while_a_capital_city"));
+			return;
+		}
+
 		//Reverse the town peacefulness setting
 		TownMetaDataController.setPeacefulness(town, !TownMetaDataController.getPeacefulness(town));
 		
@@ -209,4 +215,25 @@ public class SiegeWarTownPeacefulnessUtil {
 		return numPeacefulTownsReleased;
 	}
 
+	public static void chargeForPeacefulTowns() {
+		double townPeacefulnessCost = SiegeWarSettings.getTownPeacefulnessCost();
+		if (townPeacefulnessCost <= 0.0)
+			return;
+		TownyAPI.getInstance().getTowns().stream()
+			.filter(SiegeWarTownPeacefulnessUtil::isTownPeaceful)
+			.filter(SiegeWarTownPeacefulnessUtil::cannotAffordPeacefulNess)
+			.forEach(SiegeWarTownPeacefulnessUtil::removePeacefulness);
+
+		TownyAPI.getInstance().getTowns().stream()
+			.filter(SiegeWarTownPeacefulnessUtil::isTownPeaceful)
+			.forEach(t-> t.getAccount().withdraw(townPeacefulnessCost, "Daily SiegeWar peaceful cost."));
+	}
+
+	private static boolean cannotAffordPeacefulNess(Town town) {
+		return !town.getAccount().canPayFromHoldings(SiegeWarSettings.getTownPeacefulnessCost());
+	}
+
+	private static void removePeacefulness(Town town) {
+		setTownPeacefulness(town, false);
+	}
 }

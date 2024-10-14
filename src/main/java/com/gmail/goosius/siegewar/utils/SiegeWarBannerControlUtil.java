@@ -6,11 +6,11 @@ import com.gmail.goosius.siegewar.SiegeWar;
 import com.gmail.goosius.siegewar.enums.SiegeSide;
 import com.gmail.goosius.siegewar.enums.SiegeStatus;
 import com.gmail.goosius.siegewar.events.BannerControlSessionEndedEvent;
+import com.gmail.goosius.siegewar.events.BannerControlSessionStartedEvent;
 import com.gmail.goosius.siegewar.objects.BannerControlSession;
 import com.gmail.goosius.siegewar.objects.BattleSession;
 import com.gmail.goosius.siegewar.objects.Siege;
 import com.gmail.goosius.siegewar.settings.SiegeWarSettings;
-import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Translatable;
@@ -136,6 +136,8 @@ public class SiegeWarBannerControlUtil {
 				SiegeWarNotificationUtil.informSiegeParticipants(siege, message);
 			}
 		}
+
+		Bukkit.getPluginManager().callEvent(new BannerControlSessionStartedEvent(siege, bannerControlSession));
 	}
 
 	private static boolean doesPlayerMeetBasicSessionRequirements(Siege siege, Player player, Resident resident) throws Exception {

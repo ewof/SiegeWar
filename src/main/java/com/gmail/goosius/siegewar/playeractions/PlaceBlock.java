@@ -4,6 +4,7 @@ import com.gmail.goosius.siegewar.Messaging;
 import com.gmail.goosius.siegewar.SiegeController;
 import com.gmail.goosius.siegewar.TownOccupationController;
 import com.gmail.goosius.siegewar.enums.SiegeStatus;
+import com.gmail.goosius.siegewar.events.TownPlunderedEvent;
 import com.gmail.goosius.siegewar.objects.Siege;
 import com.gmail.goosius.siegewar.settings.SiegeWarSettings;
 import com.gmail.goosius.siegewar.utils.SiegeWarBlockProtectionUtil;
@@ -24,9 +25,9 @@ import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.Translatable;
 import com.palmergames.bukkit.towny.object.Translator;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
-import org.bukkit.World;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -224,7 +225,7 @@ public class PlaceBlock {
 			//Member of defending town
 			SurrenderDefence.processSurrenderDefenceRequest(player, siege);
 		} else {
-			throw new TownyException(translator.of("msg_err_action_disable"));
+			throw new TownyException(translator.of("msg_err_you_arent_able_to_abandon_or_surrender_this_siege"));
 		}
 	}
 
@@ -252,6 +253,10 @@ public class PlaceBlock {
 		if(!nearbyTown.isAllowedToWar())
 			throw new TownyException(Translatable.of("msg_err_this_town_is_not_allowed_to_be_attacked"));
 		
+		//Ensure the player is not part of a peaceful town.
+		if (SiegeWarTownPeacefulnessUtil.isTownPeaceful(residentsTown))
+			throw new TownyException(Translatable.of("msg_err_cannot_start_siege_as_a_peaceful_town"));
+
 		if(SiegeWarTownPeacefulnessUtil.isTownPeaceful(nearbyTown)) {
 			//Town is peaceful
 			if(residentsTown == nearbyTown) {
@@ -352,8 +357,13 @@ public class PlaceBlock {
 		if(adjacentSieges.size() > 1)
 			throw new TownyException(translator.of("msg_err_siege_war_too_many_adjacent_towns"));
 
+		Siege adjacentSiege = adjacentSieges.iterator().next();
+
 		//Attempt plunder.
-		PlunderTown.processPlunderTownRequest(player, adjacentSieges.iterator().next());
+		PlunderTown.processPlunderTownRequest(player, adjacentSiege);
+
+		//Call TownPlunderedEvent if the plunder doesn't throw an exception.
+		Bukkit.getPluginManager().callEvent(new TownPlunderedEvent(adjacentSiege, player));
 	}
 	
 	private static boolean isWhiteBanner(Block block) {
